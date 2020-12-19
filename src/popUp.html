@@ -3,14 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Snake Game</title>
 </head>
 <style>
+    body{
+    height: 100%;
+    margin: 0;
+    background-color: white;
+}
+.snakeGame{
+    width: 600px;
+    height: 400px;
+    border: 1px solid black;
+    background-color:  #4fc3f7;;
+    box-shadow: 0 0 5px rgb(240, 220, 220);
+    border-radius: 0.5em / 0.5em;
+}
 
+.bgimg{
+    height: 100%;
+    color: black;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 30px;
+}
+
+.middle{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.sidenav {
+    height: 100%;
+    width: 0%;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    background-color:  #4fc3f7;;
+    overflow: hidden;
+    transition: 0.5s;
+    padding-top: 60px;
+    color: white;
+}
+  
+.sidenav .closebtn {
+    position: absolute;
+    top: 0;
+    right: 25px;
+    font-size: 36px;
+    margin-left: 50px;
+}
+  
+#main {
+    transition: margin-left .5s;
+    padding: 16px;
+}
 </style>
 <body>
-    
+
+<div id="mySidenav" class="sidenav">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <p style="font-size: 25px; font-weight: bold;"> How to Play the Snake Game??</p>
+    <p>
+      Two boxes are representing the snake and the fruit. When one box crosses the other box the length of the box will increase and the score will update to 1 while the two cross each other. The process performed like this until the snake collision itself then the game is over. 
+    </p>
+    <p style="font-size: 20px; font-weight: bold;">
+        The user can start the game again after press the button OK.
+    </p> 
+  </div>
+  
+  <div id="main">
+    <span style="font-size:20px;cursor:pointer" onclick="openNav()">&#9776;</span>
+  </div>
+
+    <div class="bgimg">
+        <div class="middle">
+            <div class="score"></div>
+            <canvas class="snakeGame"></canvas>
+        </div>
+    </div>
 </body>
+
 <script>
     const canvas = document.querySelector(".snakeGame");
 const ctx = canvas.getContext("2d");
@@ -35,7 +111,7 @@ function Fruit() {
     }
   
     this.draw = function() {
-      ctx.fillStyle = "pink";
+      ctx.fillStyle = "white";
       ctx.fillRect(this.x, this.y, scale, scale)
     }
 }
@@ -51,7 +127,7 @@ function drawSnake(){
 
 
     this.draw = function(){
-        ctx.fillStyle='red';  //set color for snake 
+        ctx.fillStyle='green';  //set color for snake 
 
         for (let i=0; i<this.tail.length; i++){     //increase length of snake start from tail
             ctx.fillRect(this.tail[i].x, this.tail[i].y, scale, scale);
@@ -121,6 +197,7 @@ function drawSnake(){
             if(this.x == this.tail[i].x && this.y == this.tail[i].y){
                 this.total = 0;
                 this.tail=[];
+                alert('You lost and Press OK to continue the playing')
             }
         }
     }
@@ -143,10 +220,8 @@ function drawSnake(){
         if(snake.eat(fruit)){
             fruit.pickLocation();
         }
-        
         snake.checkCollision();     //will end game after snake collision
         document.querySelector('.score').innerHTML = snake.total;
-        alert('You lost')
     }, 250);
 }());
 
@@ -158,4 +233,20 @@ window.addEventListener('keydown', ((evt) => {
 }))
 
 </script>
+<!--<script src="../assets/js/snake.js"></script>-->
+
+<!--
+<script>
+    function openNav() {
+      document.getElementById("mySidenav").style.width = "250px";
+      document.getElementById("main").style.marginLeft = "250px";
+      document.body.style.backgroundColor = "white";
+    }
+
+    function closeNav() {
+    document.getElementById("mySidenav").style.width = "0";
+    document.getElementById("main").style.marginLeft= "0";
+    document.body.style.backgroundColor = "white";
+    } -->
+
 </html>
