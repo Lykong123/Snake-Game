@@ -1,143 +1,201 @@
-const canvas = document.querySelector(".snakeGame");
-const ctx = canvas.getContext("2d");
-const scale = 10;
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
 
-const rows = canvas.height / scale;
-const column = canvas.width / scale;
 
-var snake;
-
-//function to draw fruit 
-//let small box represent a fruit in this case
-function Fruit() {
-    this.x;
-    this.y;
-  
-    this.pickLocation = function() {
-      this.x = (Math.floor(Math.random() *
-        column - 1) + 1) * scale;
-      this.y = (Math.floor(Math.random() *
-        rows - 1) + 1) * scale;
-    }
-  
-    this.draw = function() {
-      ctx.fillStyle = "white";
-      ctx.fillRect(this.x, this.y, scale, scale)
+class SnakePart{
+    constructor(x, y){
+        this.x = x;
+        this.y = y;
     }
 }
 
-//draw snake
+let speed = 7;
+
+let tileCount = 21;
+let tileSize = canvas.width / tileCount - 2;
+
+let headX = 10;
+let headY = 10;
+const snakeParts = [];
+let tailLength = 2; 
+
+let appleX = 5;
+let appleY = 5;
+
+let xVelocity=0;
+let yVelocity=0;
+
+let score = 0;
+
+const gulpSound = new Audio("gulp.mp3");
+
+
+//game loop
+function drawGame(){
+    changeSnakePosition();
+    let result = isGameOver();
+    if(result){
+        return;
+    }
+
+    clearScreen();
+    
+    checkAppleCollision();
+    drawApple();
+    drawSnake();
+
+    drawScore();
+    
+    if(score > 5){
+        speed = 9;
+    }
+    if(score > 10){
+        speed = 11;
+    }
+
+    setTimeout(drawGame, 1000/ speed);
+} 
+
+function isGameOver(){
+    let gameOver = false;
+
+    if(yVelocity ===0 && xVelocity ===0){
+        return false;
+    }
+    
+    //walls
+    if(headX < 0 ){
+        gameOver = true;
+    }
+    else if(headX === tileCount){
+        gameOver = true
+    }
+    else if( headY < 0){
+        gameOver = true;
+    }
+    else if(headY === tileCount){
+        gameOver = true
+    }
+
+    for(let i =0; i < snakeParts.length; i++){
+        let part = snakeParts[i];
+        if(part.x === headX && part.y === headY){
+            gameOver = true;
+            break;
+        }
+    }
+
+
+    if (gameOver) {
+        ctx.fillStyle = "white";
+        ctx.font = "50px Verdana";
+
+        if (gameOver) {
+            ctx.fillStyle = "white";
+            ctx.font = "50px Verdana";
+        
+            var gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+            gradient.addColorStop("0", " magenta");
+            gradient.addColorStop("0.5", "blue");
+            gradient.addColorStop("1.0", "red");
+            // Fill with gradient
+            ctx.fillStyle = gradient;
+        
+            ctx.fillText("Game Over!", canvas.width / 6.5, canvas.height / 2);
+          }
+    
+        
+        ctx.fillText("Game Over!", canvas.width / 6.5, canvas.height / 2);
+      }
+
+    return gameOver;
+}
+
+function drawScore(){
+    ctx.fillStyle = "white";
+    ctx.font = "10px Verdana"
+    ctx.fillText("Score " + score, canvas.width-50, 10);
+}
+
+function clearScreen(){
+    ctx.fillStyle = '#4fc3f7';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+}
+
 function drawSnake(){
-    this.x = 0;
-    this.y = 0;
-    this.xSpeed = scale*1;
-    this.ySpeed = 0;
-    this.total = 0;
-    this.tail = [];
-
-
-    this.draw = function(){
-        ctx.fillStyle='green';  //set color for snake 
-
-        for (let i=0; i<this.tail.length; i++){     //increase length of snake start from tail
-            ctx.fillRect(this.tail[i].x, this.tail[i].y, scale, scale);
-        }
-
-        ctx.fillRect(this.x, this.y, scale, scale);  
+   
+    ctx.fillStyle = 'green';
+    for(let i =0; i < snakeParts.length; i++){
+        let part =  snakeParts[i];
+        ctx.fillRect(part.x * tileCount, part.y * tileCount, tileSize, tileSize);
     }
 
-    this.update = function(){       //function for updating the snake
-
-        for (let i=0; i<this.tail.length-1; i++){
-            this.tail[i] = this.tail[i+1];
-        }
-
-        this.tail[this.total -1] = {x: this.x, y:this.y};
-
-        this.x += this.xSpeed;
-        this.y += this.ySpeed;
-
-        if(this.x < 0){
-            this.x = canvas.width;
-        }
-        if(this.y < 0){
-            this.y = canvas.height;
-        }
-        if(this.x > canvas.width){
-            this.x = 0;
-        }
-        if(this.y > canvas.height){
-            this.x = 0;
-        }
+    snakeParts.push(new SnakePart(headX, headY)); //put an item at the end of the list next to the head
+    while (snakeParts.length > tailLength){ 
+        snakeParts.shift(); // remove the furthet item from the snake parts if have more than our tail size.
     }
 
-    this.changeDirection = function(direction){
-        switch(direction){
-            case 'Left': 
-                this.xSpeed = -scale*1;
-                this.ySpeed = 0;
-                break;
-            case 'Right': 
-                this.xSpeed = scale*1;
-                this.ySpeed = 0;
-                break;
-            case 'Up': 
-                this.xSpeed = 0;
-                this.ySpeed = -scale*1;
-                break;
-            case 'Down': 
-                this.xSpeed = 0;
-                this.ySpeed = scale*1;
-                break;
-        }
-    }
+    ctx.fillStyle =  'orange';
+    ctx.fillRect(headX * tileCount, headY* tileCount, tileSize,tileSize);
 
-    //function inscrease size of snake
-    this.eat = function(fruit){
-        if(this.x == fruit.x && this.y == fruit.y){
-            this.total++;
-            return true;
-        }
-        return false
-    }
 
-    //function for check collision and end game 
-    this.checkCollision= function(){
-        for(var i=0; i<this.tail.length; i++){
-            if(this.x == this.tail[i].x && this.y == this.tail[i].y){
-                this.total = 0;
-                this.tail=[];
-                alert('You lost and Press OK to continue the playing')
-            }
-        }
+}
+
+function changeSnakePosition(){
+    headX = headX + xVelocity;
+    headY = headY + yVelocity;
+}
+
+function drawApple(){
+    ctx.fillStyle = "red";
+    ctx.fillRect(appleX* tileCount, appleY* tileCount, tileSize, tileSize)
+}
+
+function checkAppleCollision(){
+    if(appleX === headX && appleY == headY){
+        appleX = Math.floor(Math.random() * tileCount);
+        appleY = Math.floor(Math.random() * tileCount);
+        tailLength++;
+        score++;
+        gulpSound.play();
     }
 }
 
-(function setup(){
-    snake = new drawSnake();
-    fruit = new Fruit();
+document.body.addEventListener('keydown', keyDown);
 
-    fruit.pickLocation();
+function keyDown(event){
+    //up
+    if(event.keyCode == 38){
+        if(yVelocity == 1)
+            return;
+        yVelocity = -1;
+        xVelocity = 0;
+    }
 
-    window.setInterval(() => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height); 
-        fruit.draw();
-        snake.update();
-        snake.draw();
+    //down
+    if(event.keyCode == 40){
+        if(yVelocity == -1)
+            return;
+        yVelocity = 1;
+        xVelocity = 0;
+    }
 
-        //improve performance of snake 
-        //if snake touch the box it will increase size
-        if(snake.eat(fruit)){
-            fruit.pickLocation();
-        }
-        snake.checkCollision();     //will end game after snake collision
-        document.querySelector('.score').innerHTML = snake.total;
-    }, 250);
-}());
+    //left
+    if(event.keyCode == 37){
+        if(xVelocity == 1)
+            return;
+        yVelocity = 0;
+        xVelocity = -1;
+    }
 
-//use keyboard to control the performance
-window.addEventListener('keydown', ((evt) => {
-    console.log(evt);
-    const direction = evt.key.replace('Arrow', '');
-    snake.changeDirection(direction)
-}))
+     //right
+     if(event.keyCode == 39){
+        if(xVelocity == -1)
+        return;
+        yVelocity = 0;
+        xVelocity = 1;
+    }
+}
+
+
+drawGame();
